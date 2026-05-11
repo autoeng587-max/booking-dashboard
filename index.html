@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إدارة المواعيد - Microsoft Booking</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--primary:#2563EB;--primary-light:#EFF6FF;--primary-dark:#1D4ED8;--success:#059669;--success-light:#ECFDF5;--warning:#D97706;--warning-light:#FFFBEB;--danger:#DC2626;--danger-light:#FEF2F2;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-700:#374151;--gray-900:#111827;--b1:#7C3AED;--b2:#0891B2;--b3:#059669;--shadow:0 1px 3px rgba(0,0,0,.1);--radius:10px;--radius-sm:6px;--font:'Cairo',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--gray-50);color:var(--gray-900);min-height:100vh}
+#setup-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#EFF6FF,#F0FDF4)}
+.setup-card{background:#fff;border-radius:16px;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,.12);max-width:600px;width:100%;margin:1rem}
+.setup-card h1{font-size:1.35rem;font-weight:700;margin-bottom:.25rem}
+.setup-card p{color:var(--gray-500);font-size:.83rem;margin-bottom:1.1rem;line-height:1.6}
+.setup-step{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:.85rem 1rem;margin-bottom:.85rem}
+.setup-step h3{font-size:.82rem;font-weight:600;color:var(--gray-700);margin-bottom:.35rem}
+.setup-step ol{padding-right:1.2rem;font-size:.78rem;color:var(--gray-500);line-height:2}
+.setup-step a{color:var(--primary)}
+.field{display:flex;flex-direction:column;gap:.22rem;margin-bottom:.65rem}
+.field label{font-size:.76rem;font-weight:600;color:var(--gray-700)}
+.field input,.field select,.field textarea{padding:.48rem .78rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:var(--font);font-size:.83rem;color:var(--gray-900);outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--primary)}
+.field .hint{font-size:.7rem;color:var(--gray-400)}
+.branch-section{border:1.5px solid var(--gray-200);border-radius:var(--radius);padding:.85rem 1rem;margin-bottom:.65rem}
+.branch-header{display:flex;align-items:center;gap:.45rem;margin-bottom:.65rem;font-size:.83rem;font-weight:600}
+.branch-dot{width:9px;height:9px;border-radius:50%}
+.branch-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.btn-primary{width:100%;padding:.65rem;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-family:var(--font);font-size:.88rem;font-weight:600;cursor:pointer;margin-top:.35rem}
+.btn-primary:hover{background:var(--primary-dark)}
+.demo-btn{width:100%;padding:.55rem;background:transparent;color:var(--gray-500);border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:var(--font);font-size:.8rem;cursor:pointer;margin-top:.35rem}
+.demo-btn:hover{border-color:var(--gray-400);color:var(--gray-700)}
+.error-msg{background:var(--danger-light);color:var(--danger);padding:.5rem .85rem;border-radius:var(--radius-sm);font-size:.78rem;margin-top:.55rem;display:none}
+#app{display:none}
+.topbar{background:#fff;border-bottom:1px solid var(--gray-200);padding:0 1.1rem;display:flex;align-items:center;gap:.65rem;height:56px;position:sticky;top:0;z-index:100}
+.topbar-brand{font-size:.92rem;font-weight:700;flex:1}
+.topbar-brand span{color:var(--primary)}
+.sync-btn{display:flex;align-items:center;gap:.3rem;padding:.38rem .85rem;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-family:var(--font);font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.sync-btn:hover{background:var(--primary-dark)}
+.sync-btn:disabled{background:var(--gray-300);cursor:not-allowed}
+.settings-btn{padding:.38rem .65rem;background:transparent;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;color:var(--gray-500);font-size:.8rem;font-family:var(--font)}
+.sync-status{font-size:.7rem;color:var(--gray-400)}
+.main-layout{display:flex;min-height:calc(100vh - 56px)}
+.sidebar{width:205px;background:#fff;border-left:1px solid var(--gray-200);padding:.9rem .6rem;display:flex;flex-direction:column;gap:.18rem;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;flex-shrink:0}
+.sidebar-label{font-size:.66rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;padding:.38rem .65rem .18rem}
+.nav-item{display:flex;align-items:center;gap:.5rem;padding:.48rem .65rem;border-radius:var(--radius-sm);cursor:pointer;font-size:.81rem;color:var(--gray-500);border:none;background:transparent;font-family:var(--font);width:100%;text-align:right;transition:all .15s}
+.nav-item:hover{background:var(--gray-50);color:var(--gray-900)}
+.nav-item.active{background:var(--primary-light);color:var(--primary);font-weight:600}
+.branch-item{display:flex;align-items:center;gap:.5rem;padding:.42rem .65rem;cursor:pointer;font-size:.78rem;color:var(--gray-500);border:none;background:transparent;font-family:var(--font);width:100%;text-align:right;transition:all .15s;border-radius:var(--radius-sm)}
+.branch-item:hover{background:var(--gray-50);color:var(--gray-900)}
+.branch-item.active{color:var(--gray-900);font-weight:600}
+.branch-badge{font-size:.66rem;padding:1px 6px;border-radius:999px;margin-right:auto;font-weight:600}
+.content{flex:1;padding:1.1rem;overflow-y:auto;min-width:0}
+.page{display:none}
+.page.active{display:block}
+.metrics-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1.1rem}
+.metric-card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:.85rem 1rem;box-shadow:var(--shadow)}
+.metric-label{font-size:.7rem;color:var(--gray-500);margin-bottom:.28rem}
+.metric-value{font-size:1.55rem;font-weight:700;color:var(--gray-900)}
+.metric-sub{font-size:.68rem;color:var(--gray-400);margin-top:.18rem}
+.metric-sub.up{color:var(--success)}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.45rem}
+.section-title{font-size:.92rem;font-weight:700}
+.filter-row{display:flex;gap:.38rem;flex-wrap:wrap;margin-bottom:.75rem;align-items:center}
+.filter-chip{padding:.28rem .7rem;border-radius:999px;font-size:.74rem;font-weight:600;border:1.5px solid var(--gray-200);cursor:pointer;background:transparent;color:var(--gray-500);font-family:var(--font);transition:all .15s}
+.filter-chip:hover{border-color:var(--gray-400);color:var(--gray-700)}
+.filter-chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.search-input{padding:.35rem .8rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:var(--font);font-size:.78rem;outline:none;color:var(--gray-900);transition:border-color .2s;min-width:150px}
+.search-input:focus{border-color:var(--primary)}
+.date-input{padding:.35rem .7rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:var(--font);font-size:.76rem;outline:none;color:var(--gray-900)}
+.date-input:focus{border-color:var(--primary)}
+.appt-table{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.appt-table table{width:100%;border-collapse:collapse}
+.appt-table th{background:var(--gray-50);padding:.52rem .8rem;text-align:right;font-size:.7rem;font-weight:700;color:var(--gray-500);border-bottom:1px solid var(--gray-200);white-space:nowrap}
+.appt-table td{padding:.62rem .8rem;font-size:.78rem;border-bottom:1px solid var(--gray-100);color:var(--gray-700);vertical-align:middle}
+.appt-table tr:last-child td{border-bottom:none}
+.appt-table tr:hover td{background:var(--gray-50)}
+.status-badge{display:inline-flex;align-items:center;gap:.22rem;padding:.18rem .55rem;border-radius:999px;font-size:.68rem;font-weight:600;white-space:nowrap}
+.s-confirmed{background:var(--success-light);color:var(--success)}
+.s-pending{background:var(--warning-light);color:var(--warning)}
+.s-cancelled{background:var(--danger-light);color:var(--danger)}
+.s-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.action-mini{padding:.22rem .5rem;border-radius:var(--radius-sm);font-size:.7rem;font-weight:600;border:1.5px solid var(--gray-200);cursor:pointer;background:transparent;color:var(--gray-600);font-family:var(--font);transition:all .15s;margin-left:.18rem;white-space:nowrap}
+.action-mini:hover{border-color:var(--primary);color:var(--primary)}
+.action-mini.confirm{border-color:var(--success);color:var(--success)}
+.action-mini.confirm:hover{background:var(--success-light)}
+.action-mini.canbtn{border-color:var(--danger);color:var(--danger)}
+.action-mini.canbtn:hover{background:var(--danger-light)}
+.action-mini.delbtn{border-color:var(--gray-200);color:var(--gray-400)}
+.action-mini.delbtn:hover{border-color:var(--danger);color:var(--danger)}
+.branch-pill{font-size:.66rem;padding:.16rem .52rem;border-radius:999px;font-weight:600;white-space:nowrap}
+.b-1{background:#EDE9FE;color:#6D28D9}
+.b-2{background:#E0F2FE;color:#0369A1}
+.b-3{background:#D1FAE5;color:#065F46}
+.vtag{font-size:.68rem;padding:.13rem .48rem;background:var(--gray-100);color:var(--gray-600);border-radius:var(--radius-sm);white-space:nowrap}
+.main-row:hover td{background:var(--gray-50)}
+.main-row.row-open td{background:var(--primary-light)!important;border-bottom:none}
+.exp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;padding:1rem 1.25rem}
+.exp-section{}
+.exp-title{font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;padding-bottom:.3rem;border-bottom:1px solid var(--gray-200)}
+.exp-item{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;padding:.28rem 0;border-bottom:1px solid var(--gray-100)}
+.exp-item:last-child{border-bottom:none}
+.exp-label{font-size:.72rem;color:var(--gray-400);white-space:nowrap;flex-shrink:0}
+.exp-val{font-size:.78rem;color:var(--gray-900);font-weight:500;text-align:left;word-break:break-all}
+@media(max-width:900px){.exp-grid{grid-template-columns:1fr}}
+.toolbar{display:flex;gap:.42rem;align-items:center;flex-wrap:wrap}
+.export-btn{padding:.35rem .8rem;background:#fff;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:var(--font);font-size:.76rem;font-weight:600;cursor:pointer;color:var(--gray-700);display:flex;align-items:center;gap:.28rem}
+.export-btn:hover{border-color:var(--success);color:var(--success)}
+.add-btn{padding:.35rem .8rem;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-family:var(--font);font-size:.76rem;font-weight:600;cursor:pointer}
+.add-btn:hover{background:var(--primary-dark)}
+.remind-card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:.85rem 1rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.45rem;box-shadow:var(--shadow)}
+.remind-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0}
+.remind-info{flex:1;min-width:0}
+.remind-name{font-size:.85rem;font-weight:600}
+.remind-meta{font-size:.72rem;color:var(--gray-400);margin-top:.12rem}
+.send-btn{padding:.35rem .8rem;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-family:var(--font);font-size:.74rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.send-btn.sent{background:var(--success);cursor:default}
+.charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:.75rem;margin-bottom:.75rem}
+.chart-card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:1rem;box-shadow:var(--shadow)}
+.chart-card h3{font-size:.8rem;font-weight:700;color:var(--gray-700);margin-bottom:.75rem}
+.branch-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:.75rem}
+.branch-stat-card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:.85rem;box-shadow:var(--shadow)}
+.branch-stat-name{font-size:.74rem;font-weight:700;margin-bottom:.6rem;display:flex;align-items:center;gap:.32rem}
+.bsr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.32rem;font-size:.74rem}
+.bsr .key{color:var(--gray-500)}
+.bsr .val{font-weight:600}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:1.4rem;max-width:450px;width:90%;box-shadow:0 25px 60px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto}
+.modal h2{font-size:.97rem;font-weight:700;margin-bottom:.85rem}
+.modal-field{margin-bottom:.6rem}
+.modal-field label{font-size:.74rem;font-weight:600;color:var(--gray-700);display:block;margin-bottom:.18rem}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;padding:.48rem .78rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:var(--font);font-size:.81rem;outline:none;color:var(--gray-900)}
+.modal-field input:focus,.modal-field select:focus,.modal-field textarea:focus{border-color:var(--primary)}
+.modal-actions{display:flex;gap:.45rem;margin-top:.9rem}
+.modal-btn{flex:1;padding:.52rem;border-radius:var(--radius-sm);font-family:var(--font);font-size:.81rem;font-weight:600;cursor:pointer;border:1.5px solid var(--gray-200);background:transparent;color:var(--gray-700)}
+.modal-btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.modal-btn.primary:hover{background:var(--primary-dark)}
+.modal-btn.danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+.toast{position:fixed;bottom:1.1rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--gray-900);color:#fff;padding:.55rem 1rem;border-radius:999px;font-size:.78rem;z-index:9999;transition:transform .3s ease;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.75);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:.6rem}
+.loading-overlay.show{display:flex}
+.spinner{width:32px;height:32px;border:3px solid var(--gray-200);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:.8rem;color:var(--gray-500)}
+@media(max-width:900px){.metrics-grid{grid-template-columns:repeat(2,1fr)}.charts-grid{grid-template-columns:1fr}.branch-stats{grid-template-columns:1fr}.sidebar{width:180px}}
+</style>
+</head>
+<body>
+
+<div id="setup-screen">
+  <div class="setup-card">
+    <h1>🗓️ إدارة المواعيد · Alyemni Motors</h1>
+    <p>أداة إدارة مواعيد Microsoft Booking للفروع الثلاثة.</p>
+    <div class="setup-step">
+      <h3>📋 تعليمات تسجيل الدخول</h3>
+      <ol>
+        <li>اضغط "تسجيل الدخول" — ستظهر نافذة بكود ورابط</li>
+        <li>افتح الرابط وأدخل الكود وسجّل بحساب <strong>@yemni.com</strong></li>
+        <li>الأداة ستفتح تلقائياً بعد التأكيد</li>
+      </ol>
+    </div>
+    <div class="field"><label>Client ID</label><input id="cfg-client" value="146dff0c-3210-4961-ad4e-61d2bb576b7f"></div>
+    <div class="field"><label>Tenant ID</label><input id="cfg-tenant" value="103098ff-c747-4906-a81a-26631827b87d"></div>
+    <div style="font-size:.8rem;font-weight:700;color:var(--gray-700);margin-bottom:.45rem">الفروع</div>
+    <div class="branch-section">
+      <div class="branch-header"><div class="branch-dot" style="background:var(--b1)"></div>الفرع الأول</div>
+      <div class="branch-grid">
+        <div class="field"><label>الاسم</label><input id="b1-name" value="الرياض - خريص" dir="rtl"></div>
+        <div class="field"><label>Business ID</label><input id="b1-id" value="Bookings@yemni.com"></div>
+      </div>
+    </div>
+    <div class="branch-section">
+      <div class="branch-header"><div class="branch-dot" style="background:var(--b2)"></div>الفرع الثاني</div>
+      <div class="branch-grid">
+        <div class="field"><label>الاسم</label><input id="b2-name" value="جدة - سهب" dir="rtl"></div>
+        <div class="field"><label>Business ID</label><input id="b2-id" value="Bookings1@yemni.com"></div>
+      </div>
+    </div>
+    <div class="branch-section">
+      <div class="branch-header"><div class="branch-dot" style="background:var(--b3)"></div>الفرع الثالث</div>
+      <div class="branch-grid">
+        <div class="field"><label>الاسم</label><input id="b3-name" value="جدة - اليمنى" dir="rtl"></div>
+        <div class="field"><label>Business ID</label><input id="b3-id" value="Gf00dddb516e549f98fea1a8c54a9cc21@yemni.com"></div>
+      </div>
+    </div>
+    <div id="setup-error" class="error-msg"></div>
+    <button class="btn-primary" onclick="connectMS()">🔗 تسجيل الدخول بـ Microsoft</button>
+    <button class="demo-btn" onclick="loadDemo()">🎭 وضع تجريبي (بدون اتصال)</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">إدارة المواعيد · <span>Microsoft Booking</span></div>
+    <div class="sync-status" id="sync-status"></div>
+    <button class="settings-btn" onclick="showSettings()">⚙️ إعدادات</button>
+    <button class="sync-btn" id="sync-btn" onclick="syncAll()">↻ مزامنة</button>
+  </div>
+  <div class="main-layout">
+    <div class="sidebar">
+      <div class="sidebar-label">عام</div>
+      <button class="nav-item active" onclick="navClick(this,'overview')">📊 نظرة عامة</button>
+      <button class="nav-item" onclick="navClick(this,'all-appts')">📋 كل المواعيد</button>
+      <button class="nav-item" onclick="navClick(this,'reminders')">🔔 التذكيرات</button>
+      <button class="nav-item" onclick="navClick(this,'analytics')">📈 التحليلات</button>
+      <div class="sidebar-label" style="margin-top:.35rem">الفروع</div>
+      <div id="branch-nav"></div>
+    </div>
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="page active" id="page-overview">
+        <div class="metrics-grid" id="overview-metrics"></div>
+        <div class="section-header">
+          <div class="section-title">مواعيد اليوم - جميع الفروع</div>
+          <div class="toolbar">
+            <button class="export-btn" onclick="exportExcel('today',-1)">📥 Excel اليوم</button>
+            <button class="add-btn" onclick="openAddModal()">+ إضافة موعد</button>
+          </div>
+        </div>
+        <div id="overview-appts"></div>
+      </div>
+
+      <!-- ALL -->
+      <div class="page" id="page-all-appts">
+        <div class="section-header">
+          <div class="section-title">كل المواعيد</div>
+          <div class="toolbar">
+            <button class="export-btn" onclick="exportExcel('all',-1)">📥 تصدير Excel</button>
+            <button class="add-btn" onclick="openAddModal()">+ إضافة موعد</button>
+          </div>
+        </div>
+        <div class="filter-row" id="all-filters">
+          <button class="filter-chip active" onclick="fAll(this,'all')">الكل</button>
+          <button class="filter-chip" onclick="fAll(this,'confirmed')">مؤكد</button>
+          <button class="filter-chip" onclick="fAll(this,'pending')">انتظار</button>
+          <button class="filter-chip" onclick="fAll(this,'cancelled')">ملغي</button>
+          <input type="date" class="date-input" id="all-df" onchange="renderAll()">
+          <input type="date" class="date-input" id="all-dt" onchange="renderAll()">
+          <input class="search-input" placeholder="بحث: اسم / جوال / إيميل / هيكل..." oninput="sAll(this.value)">
+        </div>
+        <div class="appt-table"><table>
+          <thead><tr><th>العميل</th><th>الفرع</th><th>التاريخ والوقت</th><th>الخدمة</th><th>المركبة</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+          <tbody id="all-body"></tbody>
+        </table></div>
+      </div>
+
+      <!-- BRANCH -->
+      <div class="page" id="page-branch">
+        <div class="section-header">
+          <div class="section-title" id="branch-title">فرع</div>
+          <div class="toolbar">
+            <button class="export-btn" onclick="exportExcel('branch',curBranch)">📥 Excel هذا الفرع</button>
+            <button class="add-btn" onclick="openAddModal()">+ إضافة موعد</button>
+          </div>
+        </div>
+        <div class="filter-row" id="branch-filters">
+          <button class="filter-chip active" onclick="fBranch(this,'all')">الكل</button>
+          <button class="filter-chip" onclick="fBranch(this,'confirmed')">مؤكد</button>
+          <button class="filter-chip" onclick="fBranch(this,'pending')">انتظار</button>
+          <button class="filter-chip" onclick="fBranch(this,'cancelled')">ملغي</button>
+          <input type="date" class="date-input" id="br-df" onchange="renderBranch()">
+          <input type="date" class="date-input" id="br-dt" onchange="renderBranch()">
+          <input class="search-input" placeholder="بحث: اسم / جوال / إيميل / هيكل..." oninput="sBranch(this.value)">
+        </div>
+        <div class="appt-table"><table>
+          <thead><tr><th>العميل</th><th>التاريخ والوقت</th><th>الخدمة</th><th>المركبة</th><th>المدة</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+          <tbody id="branch-body"></tbody>
+        </table></div>
+      </div>
+
+      <!-- REMINDERS -->
+      <div class="page" id="page-reminders">
+        <div class="section-header">
+          <div class="section-title">التذكيرات</div>
+          <button class="send-btn" onclick="sendAll()">إرسال الكل</button>
+        </div>
+        <div id="rem-list"></div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="page" id="page-analytics">
+        <div class="branch-stats" id="bstats"></div>
+        <div class="charts-grid">
+          <div class="chart-card"><h3>المواعيد - آخر 7 أيام</h3><div style="height:195px"><canvas id="lineC"></canvas></div></div>
+          <div class="chart-card"><h3>توزيع الحالات</h3><div style="height:195px"><canvas id="doughC"></canvas></div></div>
+        </div>
+        <div class="chart-card"><h3>مواعيد الأسبوع لكل فرع</h3><div style="height:175px"><canvas id="barC"></canvas></div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal"><div class="modal"><h2 id="mtitle"></h2><div id="mbody"></div><div class="modal-actions" id="macts"></div></div></div>
+<div class="toast" id="toast"></div>
+<div class="loading-overlay" id="loading"><div class="spinner"></div><div class="loading-text" id="ltxt">جاري...</div></div>
+
+<script>
+// Check if token is in URL hash (after redirect from Microsoft)
+(function(){
+  const hash=window.location.hash;
+  if(hash&&hash.includes('access_token=')){
+    const m=hash.match(/access_token=([\w\-\.~%]+)/);
+    if(m){
+      const tok=decodeURIComponent(m[1]);
+      // Store token and clean URL
+      sessionStorage.setItem('ms_token',tok);
+      window.history.replaceState(null,'',window.location.pathname);
+      // If this is a popup, notify parent and close
+      if(window.opener){
+        try{window.opener.postMessage({type:'ms_token',token:tok},'*');}catch(e){}
+        window.close();
+      }
+    }
+  }
+  // Listen for token from popup
+  window.addEventListener('message',function(e){
+    if(e.data&&e.data.type==='ms_token'&&e.data.token){
+      accessToken=e.data.token;
+      if(window._syncResolve){window._syncResolve();window._syncResolve=null;}
+      closeModal();
+    }
+  });
+})();
+let APPTS=[],BRANCHES=[],accessToken=null,charts={},curBranch=0;
+let _af='all',_as='',_bf='all',_bs='';
+const BC=['var(--b1)','var(--b2)','var(--b3)'],BP=['b-1','b-2','b-3'];
+const ABG=['#EDE9FE','#E0F2FE','#D1FAE5'],AFG=['#6D28D9','#0369A1','#065F46'];
+
+// AUTH
+async function connectMS(){
+  const tenant=gv('cfg-tenant'),client=gv('cfg-client');
+  if(!tenant||!client)return showErr('أدخل Client ID و Tenant ID');
+  CONFIG={tenant,client};
+  setupBr();
+  showLoad('جاري طلب كود التفعيل...');
+  try{
+    const r=await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/devicecode`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:client,scope:'https://graph.microsoft.com/BookingsAppointment.ReadWrite.All https://graph.microsoft.com/User.Read offline_access'})});
+    const dc=await r.json();
+    if(!dc.device_code)throw new Error(dc.error_description||'فشل');
+    hideLoad();
+    showDCModal(dc.user_code,dc.verification_uri);
+    const tok=await pollTok(tenant,client,dc.device_code,dc.interval||5);
+    accessToken=tok;closeModal();showLoad('جاري جلب المواعيد...');
+    await fetchAll();hideLoad();launch();
+  }catch(e){hideLoad();if(e.message.includes('fetch')||e.message.includes('Failed'))showManual(gv('cfg-tenant'),gv('cfg-client'));else showErr('خطأ: '+e.message);}
+}
+function setupBr(){BRANCHES=[{name:gv('b1-name')||'الرياض - خريص',id:gv('b1-id')||'Bookings@yemni.com',color:BC[0],idx:0},{name:gv('b2-name')||'جدة - سهب',id:gv('b2-id')||'Bookings1@yemni.com',color:BC[1],idx:1},{name:gv('b3-name')||'جدة - اليمنى',id:gv('b3-id')||'Gf00dddb516e549f98fea1a8c54a9cc21@yemni.com',color:BC[2],idx:2}];}
+function showDCModal(code,url){openModal('تسجيل الدخول بـ Microsoft',`<div style="text-align:center;padding:.5rem 0"><p style="font-size:.81rem;color:var(--gray-500);margin-bottom:.75rem">افتح الرابط وأدخل الكود:</p><a href="${url}" target="_blank" style="display:block;padding:.5rem;background:var(--primary-light);color:var(--primary);border-radius:8px;font-weight:700;font-size:.85rem;text-decoration:none;margin-bottom:.75rem">${url}</a><div style="background:var(--gray-50);border:2px dashed var(--gray-300);border-radius:12px;padding:1rem;margin-bottom:.75rem"><div style="font-size:.7rem;color:var(--gray-400);margin-bottom:.18rem">الكود</div><div style="font-size:1.85rem;font-weight:700;letter-spacing:.2em;color:var(--gray-900);font-family:monospace">${code}</div></div><p style="font-size:.72rem;color:var(--gray-400)">ستُحدَّث الصفحة تلقائياً ✓</p><div style="margin-top:.6rem"><div class="spinner" style="margin:0 auto"></div></div></div>`,[{label:'إلغاء',cls:'modal-btn',fn:'closeModal()'}]);}
+function showManual(t,c){openModal('تسجيل الدخول اليدوي',`<p style="font-size:.8rem;color:var(--gray-500);margin-bottom:.75rem;line-height:1.7">اضغط الرابط، سجّل دخولك، ثم انسخ الـ URL كاملاً:</p><a href="https://login.microsoftonline.com/${t}/oauth2/v2.0/authorize?client_id=${c}&response_type=token&redirect_uri=https://localhost&scope=https://graph.microsoft.com/BookingsAppointment.ReadWrite.All https://graph.microsoft.com/User.Read&response_mode=fragment" target="_blank" style="display:block;padding:.52rem;background:var(--primary);color:#fff;border-radius:8px;text-align:center;text-decoration:none;font-weight:600;font-size:.83rem;margin-bottom:.75rem">🔗 افتح صفحة تسجيل الدخول</a><div class="modal-field"><label>الصق الـ URL هنا</label><textarea id="mtok" rows="3" style="font-size:.7rem;direction:ltr" placeholder="https://localhost/#access_token=..."></textarea></div>`,[{label:'إلغاء',cls:'modal-btn',fn:'closeModal()'},{label:'دخول',cls:'modal-btn primary',fn:'submitMT()'}]);}
+async function submitMT(){let raw=gv('mtok');const m=raw.match(/access_token=([^&]+)/);if(m)raw=m[1];if(!raw||raw.length<20)return showToast('أدخل token صحيح','error');accessToken=raw;CONFIG={tenant:gv('cfg-tenant')||'103098ff-c747-4906-a81a-26631827b87d',client:gv('cfg-client')||'146dff0c-3210-4961-ad4e-61d2bb576b7f'};closeModal();showLoad('جاري جلب المواعيد...');try{await fetchAll();hideLoad();launch();}catch(e){hideLoad();showErr('فشل: '+e.message);}}
+async function pollTok(tenant,client,dc,interval){for(let i=0;i<60;i++){await sleep(interval*1000);const r=await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'urn:ietf:params:oauth:grant-type:device_code',client_id:client,device_code:dc})});const d=await r.json();if(d.access_token)return d.access_token;if(d.error==='authorization_declined'||d.error==='expired_token')throw new Error('رُفض أو انتهى');if(d.error!=='authorization_pending'&&d.error!=='slow_down')throw new Error(d.error_description||d.error);}throw new Error('انتهت المهلة');}
+
+// FETCH
+async function fetchAll(){
+  APPTS=[];
+  // Use wider range: 6 months back, 6 months forward
+  const now=new Date();
+  const from=new Date(now); from.setMonth(from.getMonth()-6);
+  const to=new Date(now);   to.setMonth(to.getMonth()+6);
+  // Use date only (no time) to avoid timezone issues
+  const fromStr=from.toISOString().slice(0,10)+'T00:00:00.000Z';
+  const toStr=to.toISOString().slice(0,10)+'T23:59:59.000Z';
+
+  for(const b of BRANCHES){
+    try{
+      let url=`https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/${encodeURIComponent(b.id)}/appointments?$filter=startDateTime/dateTime ge '${fromStr}' and startDateTime/dateTime le '${toStr}'&$top=500`;
+      // Handle pagination
+      while(url){
+        const r=await fetch(url,{headers:{Authorization:'Bearer '+accessToken}});
+        if(!r.ok){console.warn(b.name,r.status,await r.text());break;}
+        const d=await r.json();
+        if(d.value) d.value.forEach(a=>APPTS.push(norm(a,b)));
+        url=d['@odata.nextLink']||null; // get next page if exists
+      }
+    }catch(e){console.warn(b.name,e);}
+  }
+  APPTS.sort((a,b)=>new Date(a.start)-new Date(b.start));
+  console.log('Total appointments fetched:',APPTS.length);
+}
+
+function norm(a,branch){
+  let vehicle='', vin='', serviceDesc='';
+  const cqa=a.customers?.[0]?.customQuestionAnswers || a.customQuestionAnswers || [];
+  cqa.forEach(q=>{
+    const qt=q.question||'';
+    if(qt.includes('نوع المركبة')) vehicle=q.selectedOptions?.[0]||q.answer||'';
+    if(qt.includes('الهيكل')||qt.includes('VIN')||qt.includes('vin')) vin=q.answer||'';
+    if(qt.includes('وصف الخدمة')||qt.includes('الخدمة المطلوبة')) serviceDesc=q.answer||'';
+  });
+  return{
+    id:a.id,
+    customer:a.customers?.[0]?.name||a.customerName||'عميل',
+    email:a.customers?.[0]?.emailAddress||a.customerEmailAddress||'',
+    phone:a.customers?.[0]?.phone||a.customerPhone||'',
+    service:a.serviceName||'خدمة',
+    serviceDesc,
+    vehicle,
+    vin,
+    start:a.startDateTime?.dateTime||'',
+    end:a.endDateTime?.dateTime||'',
+    duration:a.duration||'PT30M',
+    status:mapSt(a.status),
+    branch,
+    notes:a.customers?.[0]?.notes||a.customerNotes||''
+  };
+}
+function mapSt(s){if(!s)return'pending';if(s==='booked'||s==='confirmed')return'confirmed';if(s==='cancelled'||s==='noShow')return'cancelled';return'pending';}
+
+// DEMO
+function loadDemo(){
+  setupBr();
+  const names=['رغد الحمدان','Mohanad Alshablan','طلال عبدالرحمن خان','مدالله عطاالله المطيري','الجوهره الاحيدب','جميل محمد','Abdulrahman Almutawa','Dima Turan','سارة العمري','خالد الزهراني','نورة الشمري','يوسف السبيعي'];
+  const vehs=['شيرى','اومودا وجايكو','ZNA','CHENGLONG'];
+  const sdescs=['صيانة القير والماكينة','تغيير زيت','فحص شامل','صيانة دورية','إصلاح مكيف','فحص كهرباء','تغيير إطارات','صيانة فرامل'];
+  const svcs=['مواعيد خدمات مابعد البيع لفرع خريص','مواعيد صيانة فرع الأوتوموبيل- سهب','مواعيد خدمات ما بعد البيع'];
+  const sts=['confirmed','confirmed','confirmed','pending','pending','cancelled'];
+  APPTS=[];const now=new Date();
+  for(let d=-14;d<=30;d++){const dt=new Date(now);dt.setDate(dt.getDate()+d);const n=3+Math.floor(Math.random()*6);
+  for(let i=0;i<n;i++){const b=BRANCHES[Math.floor(Math.random()*3)],h=8+Math.floor(Math.random()*9),mn=[0,30][Math.floor(Math.random()*2)];const s=new Date(dt);s.setHours(h,mn,0);const e=new Date(s);e.setMinutes(e.getMinutes()+30);
+  const vins=['1HGBH41JXMN109186','2T1BURHE0JC034958','JN1AZ4EH7FM730851','WBAVB13556KX45682','1FTFW1ET5DFA12345','5YJSA1DN1DFP14705','1G1ZT53806F109149','KNAGM4AD8G5136721'];
+  APPTS.push({id:'dm-'+d+'-'+i,customer:names[Math.floor(Math.random()*names.length)],email:'client'+Math.floor(Math.random()*99)+'@yemni.com',phone:'050'+Math.floor(1000000+Math.random()*8999999),service:svcs[Math.floor(Math.random()*svcs.length)],serviceDesc:sdescs[Math.floor(Math.random()*sdescs.length)],vehicle:vehs[Math.floor(Math.random()*vehs.length)],vin:vins[Math.floor(Math.random()*vins.length)],start:s.toISOString(),end:e.toISOString(),duration:'PT30M',status:sts[Math.floor(Math.random()*sts.length)],branch:b,notes:''});}}
+  APPTS.sort((a,b)=>new Date(a.start)-new Date(b.start));launch();
+}
+
+// LAUNCH
+function launch(){document.getElementById('setup-screen').style.display='none';document.getElementById('app').style.display='block';buildNav();refreshAll();}
+function buildNav(){document.getElementById('branch-nav').innerHTML=BRANCHES.map((b,i)=>{const n=APPTS.filter(a=>a.branch.idx===i&&isToday(a.start)).length;return`<button class="branch-item" onclick="showBrPage(${i})"><div style="width:7px;height:7px;border-radius:50%;background:${b.color};flex-shrink:0"></div>${b.name}${n?`<span class="branch-badge ${BP[i]}" style="margin-right:auto">${n}</span>`:''}</button>`;}).join('');}
+function refreshAll(){renderOverview();buildNav();renderAll();renderReminders();renderAnalytics();if(document.getElementById('page-branch').classList.contains('active'))renderBranch();document.getElementById('sync-status').textContent='آخر مزامنة: '+new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});}
+
+// OVERVIEW
+function renderOverview(){
+  const td=APPTS.filter(a=>isToday(a.start)),conf=td.filter(a=>a.status==='confirmed').length,pend=td.filter(a=>a.status==='pending').length,up=APPTS.filter(a=>isFut(a.start)).length;
+  document.getElementById('overview-metrics').innerHTML=`<div class="metric-card"><div class="metric-label">📅 مواعيد اليوم</div><div class="metric-value">${td.length}</div><div class="metric-sub">${BRANCHES.length} فروع</div></div><div class="metric-card"><div class="metric-label">🗓️ قادمة</div><div class="metric-value">${up}</div><div class="metric-sub">الأيام القادمة</div></div>`;
+  const rows=td.map(a=>mkRow(a,true)).join('')||'<tr><td colspan="7" class="empty-state">لا توجد مواعيد اليوم</td></tr>';
+  document.getElementById('overview-appts').innerHTML=`<div class="appt-table"><table><thead><tr><th>العميل</th><th>الفرع</th><th>الوقت</th><th>الخدمة</th><th>المركبة</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// ROW - EXPANDABLE
+function mkRow(a,showBr=false){
+  const dt=new Date(a.start),
+    time=vd(dt)?dt.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'}):'-',
+    date=vd(dt)?dt.toLocaleDateString('ar-SA',{weekday:'short',day:'2-digit',month:'2-digit',year:'2-digit',timeZone:'Asia/Riyadh'}):'-';
+  const sl={confirmed:'مؤكد',pending:'انتظار',cancelled:'ملغي'}[a.status]||a.status,sc={confirmed:'s-confirmed',pending:'s-pending',cancelled:'s-cancelled'}[a.status]||'s-pending';
+  const brCol=showBr?`<td><span class="branch-pill ${BP[a.branch.idx]}">${a.branch.name}</span></td>`:'';
+  const durCol=showBr?'':`<td>${parseDur(a.duration)} د</td>`;
+  const veh=a.vehicle?`<span class="vtag">🚗 ${a.vehicle}</span>`:`<span style="color:var(--gray-300);font-size:.68rem">-</span>`;
+  const acts=a.status==='pending'
+    ?`<button class="action-mini confirm" onclick="doConfirm('${a.id}')">تأكيد</button><button class="action-mini canbtn" onclick="doCancel('${a.id}')">إلغاء</button><button class="action-mini delbtn" onclick="doDelete('${a.id}')">🗑</button>`
+    :a.status==='cancelled'
+    ?`<button class="action-mini" onclick="doReschedule('${a.id}')">إعادة جدولة</button><button class="action-mini delbtn" onclick="doDelete('${a.id}')">🗑</button>`
+    :`<button class="action-mini" onclick="doEdit('${a.id}')">تعديل</button><button class="action-mini canbtn" onclick="doCancel('${a.id}')">إلغاء</button><button class="action-mini delbtn" onclick="doDelete('${a.id}')">🗑</button>`;
+  const colspan=showBr?7:6;
+  const expandedRow=`<tr class="expanded-row" id="exp-${a.id}" style="display:none">
+    <td colspan="${colspan}" style="padding:0;background:var(--gray-50);border-bottom:2px solid var(--primary-light)">
+      <div class="exp-grid">
+        <div class="exp-section">
+          <div class="exp-title">👤 بيانات العميل</div>
+          <div class="exp-item"><span class="exp-label">الاسم</span><span class="exp-val">${a.customer||'-'}</span></div>
+          <div class="exp-item"><span class="exp-label">الجوال</span><span class="exp-val">${a.phone?`<a href="tel:${a.phone}" style="color:var(--primary);text-decoration:none">${a.phone}</a>`:'-'}</span></div>
+          <div class="exp-item"><span class="exp-label">الإيميل</span><span class="exp-val">${a.email?`<a href="mailto:${a.email}" style="color:var(--primary);text-decoration:none">${a.email}</a>`:'-'}</span></div>
+        </div>
+        <div class="exp-section">
+          <div class="exp-title">🔧 تفاصيل الموعد</div>
+          <div class="exp-item"><span class="exp-label">الخدمة</span><span class="exp-val">${a.service||'-'}</span></div>
+          <div class="exp-item"><span class="exp-label">وصف الطلب</span><span class="exp-val">${a.serviceDesc||'-'}</span></div>
+          <div class="exp-item"><span class="exp-label">التاريخ</span><span class="exp-val">${date} · ${time}</span></div>
+          <div class="exp-item"><span class="exp-label">المدة</span><span class="exp-val">${parseDur(a.duration)} دقيقة</span></div>
+          <div class="exp-item"><span class="exp-label">الفرع</span><span class="exp-val">${a.branch.name}</span></div>
+        </div>
+        <div class="exp-section">
+          <div class="exp-title">🚗 بيانات المركبة</div>
+          <div class="exp-item"><span class="exp-label">النوع</span><span class="exp-val">${a.vehicle||'-'}</span></div>
+          <div class="exp-item"><span class="exp-label">رقم الهيكل</span><span class="exp-val" style="font-family:monospace;letter-spacing:.05em;font-weight:600;color:var(--gray-900)">${a.vin||'-'}</span></div>
+          ${a.notes?`<div class="exp-item"><span class="exp-label">ملاحظات</span><span class="exp-val">${a.notes}</span></div>`:''}
+        </div>
+      </div>
+    </td>
+  </tr>`;
+  return`<tr class="main-row" onclick="toggleExp('${a.id}')" style="cursor:pointer">
+    <td><strong>${a.customer}</strong><br><span style="font-size:.65rem;color:var(--gray-400)">${a.phone||''}</span></td>
+    ${brCol}
+    <td>${time}<br><span style="font-size:.65rem;color:var(--gray-400)">${date}</span></td>
+    <td>${a.service}</td>
+    ${durCol}
+    <td>${veh}</td>
+    <td><span class="status-badge ${sc}"><span class="s-dot"></span>${sl}</span></td>
+    <td style="white-space:nowrap" onclick="event.stopPropagation()">${acts}</td>
+  </tr>${expandedRow}`;
+}
+
+// ALL
+function renderAll(){const list=fl(APPTS,_af,_as,'all-df','all-dt');document.getElementById('all-body').innerHTML=list.map(a=>mkRow(a,true)).join('')||'<tr><td colspan="7" class="empty-state">لا توجد نتائج</td></tr>';}
+function fAll(btn,f){document.querySelectorAll('#all-filters .filter-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');_af=f;renderAll();}
+function sAll(v){_as=v.trim();renderAll();}
+
+// BRANCH
+function showBrPage(idx){curBranch=idx;_bf='all';_bs='';document.querySelectorAll('.branch-item').forEach((b,i)=>b.classList.toggle('active',i===idx));document.getElementById('branch-title').textContent=BRANCHES[idx].name;document.querySelectorAll('#branch-filters .filter-chip').forEach(b=>b.classList.remove('active'));document.querySelector('#branch-filters .filter-chip').classList.add('active');renderBranch();showPage('branch');}
+function renderBranch(){const list=fl(APPTS.filter(a=>a.branch.idx===curBranch),_bf,_bs,'br-df','br-dt');document.getElementById('branch-body').innerHTML=list.map(a=>mkRow(a,false)).join('')||'<tr><td colspan="6" class="empty-state">لا توجد مواعيد</td></tr>';}
+function fBranch(btn,f){document.querySelectorAll('#branch-filters .filter-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');_bf=f;renderBranch();}
+function sBranch(v){_bs=v.trim();renderBranch();}
+
+// FILTER HELPER
+function fl(list,status,search,dfId,dtId){
+  let r=[...list];
+  if(status!=='all')r=r.filter(a=>a.status===status);
+  if(search){const q=search.toLowerCase();r=r.filter(a=>a.customer.toLowerCase().includes(q)||a.vehicle.toLowerCase().includes(q)||a.service.toLowerCase().includes(q)||(a.serviceDesc&&a.serviceDesc.toLowerCase().includes(q))||(a.phone&&a.phone.includes(q))||(a.email&&a.email.toLowerCase().includes(q))||(a.vin&&a.vin.toLowerCase().includes(q)));}
+  const df=document.getElementById(dfId)?.value,dt=document.getElementById(dtId)?.value;
+  if(df)r=r.filter(a=>a.start&&a.start>=df);
+  if(dt)r=r.filter(a=>a.start&&a.start<=dt+'T23:59');
+  return r;
+}
+
+// EXPAND ROW
+function toggleExp(id){const row=document.getElementById('exp-'+id);if(!row)return;const isOpen=row.style.display!=='none';document.querySelectorAll('.expanded-row').forEach(r=>r.style.display='none');document.querySelectorAll('.main-row').forEach(r=>r.classList.remove('row-open'));if(!isOpen){row.style.display='';row.previousElementSibling.classList.add('row-open');}}
+function exportExcel(scope,bIdx){
+  let list=scope==='today'?APPTS.filter(a=>isToday(a.start)):scope==='branch'?APPTS.filter(a=>a.branch.idx===bIdx):APPTS;
+  const bName=scope==='branch'?BRANCHES[bIdx].name:'جميع الفروع';
+  const hdr=['العميل','الجوال','الإيميل','الفرع','التاريخ','الوقت','الخدمة','وصف الطلب','نوع المركبة','رقم الهيكل (VIN)','الحالة','الملاحظات'];
+  const rows=list.map(a=>{const dt=new Date(a.start);return[a.customer,a.phone,a.email,a.branch.name,vd(dt)?dt.toLocaleDateString('ar-SA',{timeZone:'Asia/Riyadh'}):'-',vd(dt)?dt.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'}):'-',a.service,a.serviceDesc||'',a.vehicle,a.vin||'',{confirmed:'مؤكد',pending:'انتظار',cancelled:'ملغي'}[a.status]||a.status,a.notes];});
+  const csv=[hdr,...rows].map(r=>r.map(c=>`"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob),el=document.createElement('a');
+  el.href=url;el.download=`مواعيد_${bName}_${todayStr()}.csv`;el.click();URL.revokeObjectURL(url);
+  showToast('تم تصدير الملف ✓','success');
+}
+
+// ADD
+function openAddModal(){
+  const opts=BRANCHES.map((b,i)=>`<option value="${i}">${b.name}</option>`).join('');
+  openModal('إضافة موعد جديد',`
+    <div class="modal-field"><label>اسم العميل *</label><input id="an" dir="rtl" placeholder="الاسم الكامل"></div>
+    <div class="modal-field"><label>رقم الجوال</label><input id="ap" placeholder="+966 5xxxxxxxx"></div>
+    <div class="modal-field"><label>الإيميل</label><input id="ae" placeholder="email@example.com"></div>
+    <div class="modal-field"><label>الفرع</label><select id="abr">${opts}</select></div>
+    <div class="modal-field"><label>الخدمة *</label><input id="asv" dir="rtl" placeholder="نوع الخدمة"></div>
+    <div class="modal-field"><label>نوع المركبة</label><input id="av" dir="rtl" placeholder="مثال: تويوتا كامري 2023"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem">
+      <div class="modal-field"><label>التاريخ *</label><input id="ad" type="date"></div>
+      <div class="modal-field"><label>الوقت *</label><input id="at" type="time"></div>
+    </div>
+    <div class="modal-field"><label>ملاحظات</label><textarea id="ano" rows="2" dir="rtl"></textarea></div>
+  `,[{label:'إلغاء',cls:'modal-btn',fn:'closeModal()'},{label:'إضافة',cls:'modal-btn primary',fn:'doAdd()'}]);
+}
+async function doAdd(){
+  const name=gv('an'),phone=gv('ap'),email=gv('ae'),bIdx=parseInt(gv('abr')),svc=gv('asv'),veh=gv('av'),date=gv('ad'),time=gv('at'),notes=gv('ano');
+  if(!name||!svc||!date||!time)return showToast('أدخل الاسم والخدمة والتاريخ والوقت','error');
+  const branch=BRANCHES[bIdx],s=new Date(date+'T'+time),e=new Date(s);e.setMinutes(e.getMinutes()+30);
+  APPTS.push({id:'loc-'+Date.now(),customer:name,email,phone,service:svc,vehicle:veh,start:s.toISOString(),end:e.toISOString(),duration:'PT30M',status:'pending',branch,notes});
+  APPTS.sort((a,b)=>new Date(a.start)-new Date(b.start));
+  if(accessToken&&!branch.id.startsWith('demo')){
+    try{await fetch(`https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/${encodeURIComponent(branch.id)}/appointments`,{method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({serviceName:svc,customerName:name,customerEmailAddress:email,customerPhone:phone,startDateTime:{dateTime:s.toISOString(),timeZone:'Arab Standard Time'},endDateTime:{dateTime:e.toISOString(),timeZone:'Arab Standard Time'},customerNotes:veh?`نوع المركبة: ${veh}\n${notes}`:notes})});}catch(e){console.warn(e);}
+  }
+  closeModal();showToast('تم إضافة الموعد ✓','success');refreshAll();
+}
+
+// ACTIONS
+function doConfirm(id){const a=APPTS.find(x=>x.id===id);if(!a)return;a.status='confirmed';showToast('تم التأكيد ✓','success');refreshAll();}
+function doCancel(id){openModal('إلغاء الموعد',`<div class="modal-field"><label>سبب الإلغاء</label><textarea id="cr" rows="2" dir="rtl"></textarea></div>`,[{label:'تراجع',cls:'modal-btn',fn:'closeModal()'},{label:'تأكيد الإلغاء',cls:'modal-btn danger',fn:`_doCancel('${id}')`}]);}
+function _doCancel(id){const a=APPTS.find(x=>x.id===id);if(!a)return;a.status='cancelled';closeModal();showToast('تم الإلغاء','error');refreshAll();}
+function doDelete(id){openModal('حذف الموعد',`<p style="font-size:.83rem;color:var(--gray-500)">هل أنت متأكد من الحذف النهائي؟</p>`,[{label:'تراجع',cls:'modal-btn',fn:'closeModal()'},{label:'حذف نهائي',cls:'modal-btn danger',fn:`_doDelete('${id}')`}]);}
+function _doDelete(id){const a=APPTS.find(x=>x.id===id);if(!a)return;APPTS=APPTS.filter(x=>x.id!==id);closeModal();showToast('تم الحذف','error');refreshAll();if(accessToken&&!id.startsWith('loc')&&!id.startsWith('dm'))fetch(`https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/${encodeURIComponent(a.branch.id)}/appointments/${id}`,{method:'DELETE',headers:{Authorization:'Bearer '+accessToken}}).catch(console.warn);}
+function doEdit(id){
+  const a=APPTS.find(x=>x.id===id);if(!a)return;const dt=new Date(a.start);
+  openModal('تعديل الموعد',`<div class="modal-field"><label>اسم العميل</label><input id="en" value="${a.customer}" dir="rtl"></div><div class="modal-field"><label>الجوال</label><input id="ep" value="${a.phone}"></div><div class="modal-field"><label>الخدمة</label><input id="es" value="${a.service}" dir="rtl"></div><div class="modal-field"><label>نوع المركبة</label><input id="ev" value="${a.vehicle}" dir="rtl" placeholder="مثال: تويوتا كامري"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem"><div class="modal-field"><label>التاريخ</label><input id="ed" type="date" value="${vd(dt)?dt.toISOString().slice(0,10):''}"></div><div class="modal-field"><label>الوقت</label><input id="et" type="time" value="${vd(dt)?dt.toTimeString().slice(0,5):''}"></div></div><div class="modal-field"><label>ملاحظات</label><textarea id="eno" rows="2" dir="rtl">${a.notes}</textarea></div>`,[{label:'إلغاء',cls:'modal-btn',fn:'closeModal()'},{label:'حفظ',cls:'modal-btn primary',fn:`_doEdit('${id}')`}]);
+}
+function _doEdit(id){const a=APPTS.find(x=>x.id===id);if(!a)return;a.customer=gv('en')||a.customer;a.phone=gv('ep')||a.phone;a.service=gv('es')||a.service;a.vehicle=gv('ev');a.notes=gv('eno');const d=gv('ed'),t=gv('et');if(d&&t)a.start=new Date(d+'T'+t).toISOString();closeModal();showToast('تم الحفظ ✓','success');refreshAll();}
+function doReschedule(id){openModal('إعادة جدولة',`<div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem"><div class="modal-field"><label>التاريخ الجديد</label><input id="rd" type="date"></div><div class="modal-field"><label>الوقت الجديد</label><input id="rt" type="time"></div></div>`,[{label:'إلغاء',cls:'modal-btn',fn:'closeModal()'},{label:'إعادة الجدولة',cls:'modal-btn primary',fn:`_doReschedule('${id}')`}]);}
+function _doReschedule(id){const a=APPTS.find(x=>x.id===id),d=gv('rd'),t=gv('rt');if(!d||!t)return showToast('حدد التاريخ والوقت','error');a.start=new Date(d+'T'+t).toISOString();a.status='pending';closeModal();showToast('تم إعادة الجدولة ✓','success');refreshAll();}
+
+// REMINDERS
+function renderReminders(){
+  const list=APPTS.filter(a=>a.status!=='cancelled'&&isFut(a.start)).slice(0,25);
+  const el=document.getElementById('rem-list');
+  if(!list.length){el.innerHTML='<div class="empty-state">لا توجد تذكيرات</div>';return;}
+  el.innerHTML=list.map(a=>{const dt=new Date(a.start),bi=a.branch.idx,ts=vd(dt)?dt.toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long'})+' '+dt.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'}):'-',init=a.customer.split(' ').map(w=>w[0]).join('').slice(0,2);
+  return`<div class="remind-card"><div class="remind-avatar" style="background:${ABG[bi]};color:${AFG[bi]}">${init}</div><div class="remind-info"><div class="remind-name">${a.customer} ${a.vehicle?`<span class="vtag">🚗 ${a.vehicle}</span>`:''}</div><div class="remind-meta">${ts} · ${a.branch.name} · ${a.service}</div></div><button class="send-btn" id="r${a.id}" onclick="sendRem('${a.id}')">إرسال تذكير</button></div>`;}).join('');
+}
+function sendRem(id){const b=document.getElementById('r'+id);if(b){b.textContent='✓ تم';b.classList.add('sent');b.disabled=true;}showToast('تم إرسال التذكير','success');}
+function sendAll(){document.querySelectorAll('.send-btn:not(.sent)').forEach(b=>{b.textContent='✓ تم';b.classList.add('sent');b.disabled=true;});showToast('تم إرسال جميع التذكيرات','success');}
+
+// ANALYTICS
+function renderAnalytics(){
+  // Destroy all existing charts first
+  ['lineC','doughC','barC'].forEach(id=>{dc(id);});
+  document.getElementById('bstats').innerHTML=BRANCHES.map((b,i)=>{const all=APPTS.filter(a=>a.branch.idx===i),conf=all.filter(a=>a.status==='confirmed').length,pend=all.filter(a=>a.status==='pending').length,canc=all.filter(a=>a.status==='cancelled').length;return`<div class="branch-stat-card"><div class="branch-stat-name" style="color:${b.color}"><div style="width:7px;height:7px;border-radius:50%;background:${b.color}"></div>${b.name}</div><div class="bsr"><span class="key">الإجمالي</span><span class="val">${all.length}</span></div><div class="bsr"><span class="key">مؤكدة</span><span class="val" style="color:var(--success)">${conf}</span></div><div class="bsr"><span class="key">انتظار</span><span class="val" style="color:var(--warning)">${pend}</span></div><div class="bsr"><span class="key">ملغية</span><span class="val" style="color:var(--danger)">${canc}</span></div><div class="bsr"><span class="key">التأكيد</span><span class="val">${all.length?Math.round(conf/all.length*100):0}%</span></div></div>`;}).join('');
+  const days=[],lbls=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));lbls.push(d.toLocaleDateString('ar-SA',{weekday:'short'}));}
+  dc('lineC');charts.line=new Chart(document.getElementById('lineC'),{type:'line',data:{labels:lbls,datasets:BRANCHES.map((b,i)=>({label:b.name,data:days.map(d=>APPTS.filter(a=>a.branch.idx===i&&a.start.startsWith(d)).length),borderColor:['#7C3AED','#0891B2','#059669'][i],backgroundColor:'transparent',tension:.4,borderWidth:2,pointRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Cairo'},boxWidth:10}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+  dc('doughC');charts.dough=new Chart(document.getElementById('doughC'),{type:'doughnut',data:{labels:['مؤكد','انتظار','ملغي'],datasets:[{data:[APPTS.filter(a=>a.status==='confirmed').length,APPTS.filter(a=>a.status==='pending').length,APPTS.filter(a=>a.status==='cancelled').length],backgroundColor:['#059669','#D97706','#DC2626'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Cairo'},boxWidth:10}}}}});
+  const wk=new Date();wk.setDate(wk.getDate()-7);dc('barC');charts.bar=new Chart(document.getElementById('barC'),{type:'bar',data:{labels:BRANCHES.map(b=>b.name),datasets:[{data:BRANCHES.map((_,i)=>APPTS.filter(a=>a.branch.idx===i&&new Date(a.start)>=wk).length),backgroundColor:['#7C3AED','#0891B2','#059669'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{stepSize:2}}}}});
+}
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+// SYNC
+async function syncAll(){
+  const btn=document.getElementById('sync-btn');
+  btn.disabled=true;btn.textContent='...';
+  showLoad('جاري تجديد الجلسة...');
+  try{
+    // Always get fresh token before syncing
+    await refreshTokenFlow();
+    showLoad('جاري المزامنة...');
+    await fetchAll();
+    refreshAll();
+    showToast('تمت المزامنة ✓','success');
+  }catch(e){
+    showToast('فشلت المزامنة: '+e.message,'error');
+  }
+  hideLoad();btn.disabled=false;btn.textContent='↻ مزامنة';
+}
+
+async function refreshTokenFlow(){
+  return new Promise((resolve,reject)=>{
+    const tenant=CONFIG.tenant||'103098ff-c747-4906-a81a-26631827b87d';
+    const client=CONFIG.client||'146dff0c-3210-4961-ad4e-61d2bb576b7f';
+    const redirectUri='https://autoeng587-max.github.io/booking-dashboard/';
+    const url=`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${client}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=https://graph.microsoft.com/BookingsAppointment.ReadWrite.All https://graph.microsoft.com/User.Read&response_mode=fragment&prompt=select_account`;
+    const popup=window.open(url,'mslogin','width=520,height=620,left=400,top=100');
+    if(!popup){showManualTokenSync(resolve,reject);return;}
+    hideLoad();
+    openModal('تسجيل الدخول',`
+      <div style="text-align:center;padding:.5rem 0">
+        <div style="font-size:2rem;margin-bottom:.5rem">🔑</div>
+        <p style="font-size:.85rem;color:var(--gray-700);font-weight:600;margin-bottom:.5rem">سجّل دخولك في النافذة الصغيرة</p>
+        <p style="font-size:.8rem;color:var(--gray-500);line-height:1.7;margin-bottom:1rem">ستُغلق النافذة تلقائياً وستُجلب المواعيد بعد تسجيل الدخول</p>
+        <div class="spinner" style="margin:0 auto"></div>
+      </div>
+    `,[{label:'إلغاء',cls:'modal-btn',fn:`closeModal();if(window._syncReject)window._syncReject(new Error('إلغاء'))`}]);
+    window._syncResolve=resolve;
+    window._syncReject=reject;
+    const timer=setInterval(()=>{
+      try{
+        if(popup.closed){clearInterval(timer);closeModal();reject(new Error('تم إغلاق النافذة'));return;}
+        const href=popup.location.href;
+        if(href&&href.includes('access_token=')){
+          clearInterval(timer);
+          const m=href.match(/access_token=([\w\-\.~%]+)/);
+          if(m){accessToken=decodeURIComponent(m[1]);popup.close();closeModal();resolve();}
+          else{popup.close();closeModal();reject(new Error('لم يتم العثور على Token'));}
+        }
+      }catch(e){/* cross-origin, keep waiting */}
+    },500);
+    setTimeout(()=>{clearInterval(timer);if(!popup.closed)popup.close();closeModal();showManualTokenSync(resolve,reject);},120000);
+  });
+}
+
+function showManualTokenSync(resolve,reject){
+  hideLoad();
+  const tenant=CONFIG.tenant||'103098ff-c747-4906-a81a-26631827b87d';
+  const client=CONFIG.client||'146dff0c-3210-4961-ad4e-61d2bb576b7f';
+  const redirectUri='https://autoeng587-max.github.io/booking-dashboard/';
+  openModal('تجديد الجلسة',`
+    <p style="font-size:.82rem;color:var(--gray-500);margin-bottom:.85rem;line-height:1.7">اضغط الرابط وسجّل دخولك، ثم انسخ الـ URL كاملاً من شريط العنوان والصقه هنا:</p>
+    <a href="https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${client}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=https://graph.microsoft.com/BookingsAppointment.ReadWrite.All https://graph.microsoft.com/User.Read&response_mode=fragment&prompt=select_account"
+       target="_blank" style="display:block;padding:.52rem;background:var(--primary);color:#fff;border-radius:8px;text-align:center;text-decoration:none;font-weight:600;font-size:.83rem;margin-bottom:.75rem">🔗 تسجيل الدخول</a>
+    <div class="modal-field"><label>الصق الـ URL كاملاً هنا</label><textarea id="sync-tok" rows="3" style="font-size:.7rem;direction:ltr" placeholder="https://autoeng587-max.github.io/booking-dashboard/#access_token=..."></textarea></div>
+  `,[
+    {label:'إلغاء',cls:'modal-btn',fn:`closeModal()`},
+    {label:'تأكيد',cls:'modal-btn primary',fn:`submitSyncToken()`}
+  ]);
+  window._syncResolve=resolve;
+  window._syncReject=reject;
+}
+
+function submitSyncToken(){
+  let raw=document.getElementById('sync-tok')?.value?.trim()||'';
+  const m=raw.match(/access_token=([^&]+)/);
+  if(m)raw=m[1];
+  if(!raw||raw.length<20){showToast('أدخل URL صحيح','error');return;}
+  accessToken=raw;
+  closeModal();
+  if(window._syncResolve){window._syncResolve();window._syncResolve=null;}
+}
+
+// SETTINGS
+function showSettings(){openModal('الإعدادات',BRANCHES.map((b,i)=>`<div class="modal-field"><label style="display:flex;align-items:center;gap:.32rem"><div style="width:7px;height:7px;border-radius:50%;background:${b.color}"></div>اسم الفرع ${i+1}</label><input id="sb${i}" value="${b.name}" dir="rtl"></div>`).join(''),[{label:'إعادة الاتصال',cls:'modal-btn',fn:'closeModal();document.getElementById("app").style.display="none";document.getElementById("setup-screen").style.display="flex"'},{label:'حفظ',cls:'modal-btn primary',fn:'saveSt()'}]);}
+function saveSt(){BRANCHES.forEach((b,i)=>{b.name=document.getElementById('sb'+i)?.value||b.name;});closeModal();refreshAll();showToast('تم الحفظ ✓','success');}
+
+// NAV
+function navClick(el,name){document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));el.classList.add('active');document.querySelectorAll('.branch-item').forEach(b=>b.classList.remove('active'));showPage(name);}
+function showPage(name){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));const p=document.getElementById('page-'+name);if(p)p.classList.add('active');if(name==='analytics')setTimeout(renderAnalytics,50);}
+
+// MODAL
+function openModal(title,body,actions){document.getElementById('mtitle').textContent=title;document.getElementById('mbody').innerHTML=body;document.getElementById('macts').innerHTML=actions.map(a=>`<button class="${a.cls}" onclick="${a.fn}">${a.label}</button>`).join('');document.getElementById('modal').classList.add('open');}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+
+// UTILS
+function gv(id){return document.getElementById(id)?.value?.trim()||'';}
+function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type;setTimeout(()=>t.classList.add('show'),10);setTimeout(()=>t.classList.remove('show'),3000);}
+function showLoad(msg){document.getElementById('ltxt').textContent=msg;document.getElementById('loading').classList.add('show');}
+function hideLoad(){document.getElementById('loading').classList.remove('show');}
+function showErr(msg){const e=document.getElementById('setup-error');e.textContent=msg;e.style.display='block';}
+function isToday(d){
+  if(!d)return false;
+  const dt=new Date(d);
+  const now=new Date();
+  // Compare in local timezone
+  return dt.toLocaleDateString('en-SA',{timeZone:'Asia/Riyadh'})===now.toLocaleDateString('en-SA',{timeZone:'Asia/Riyadh'});
+}
+function isFut(d){
+  if(!d)return false;
+  return new Date(d)>new Date();
+}
+function vd(d){return d instanceof Date&&!isNaN(d);}
+function parseDur(d){if(!d)return 30;const m=d.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);return m?(parseInt(m[1]||0)*60+parseInt(m[2]||0)):30;}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+</script>
+</body>
+</html>
